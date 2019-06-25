@@ -1,0 +1,14 @@
+[
+    {
+        "userId": 5,
+        "id": 42,
+        "title":"Douglas Adams",
+        "body":"foobar"
+    },
+    {
+        "userId": 6,
+        "id": 43,
+        "title":"Ford",
+        "body":"---"
+    }
+]
