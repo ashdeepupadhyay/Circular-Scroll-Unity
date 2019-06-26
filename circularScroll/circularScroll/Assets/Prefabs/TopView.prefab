@@ -203,7 +203,7 @@ GameObject:
   - component: {fileID: 114135517609169648}
   - component: {fileID: 114467776187706722}
   m_Layer: 5
-  m_Name: PreviousPage (1)
+  m_Name: NextPage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -309,11 +309,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31bb6e0a81ced4e4b948b61ae046b1b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  smallTileRow: {fileID: 1130242051235516}
+  smallThumbnailRow: {fileID: 1130242051235516}
   contentSetParent: {fileID: 1130242051235516}
   previousPage: {fileID: 114500371981312272}
   nextPage: {fileID: 114467776187706722}
-  smallTileListItemsParent: {fileID: 224889150614566634}
+  detailListItemsParent: {fileID: 224889150614566634}
+  smallListCarouselSlideDuration: 0.5
+  smallListCarouselFadeDuration: 0.5
+  smallListCarouselDelayDuration: 0.25
+  smallListCarouselSlideDistance: 750
+  cachedFilteredList: []
 --- !u!114 &114128167846335220
 MonoBehaviour:
   m_ObjectHideFlags: 1

@@ -32,7 +32,7 @@ public class TopView : MonoBehaviour {
 
     public List<Values> cachedFilteredList = new List<Values>();
     private List<SmallTile> displayContentList = new List<SmallTile>();
-    private const int bottomPanelTileCount = 3;
+    private const int bottomPanelTileCount = 4;
     private bool IsDetailListCarouselAnimating = false;
     private int totalNoPages;
     private float contentSetParentPositionx;
@@ -66,7 +66,9 @@ public class TopView : MonoBehaviour {
             {
                 Debug.Log(items.Values[i].Text);
             }
+            cachedFilteredList = items.Values.ToList();
             totalNoPages = Mathf.CeilToInt(cachedFilteredList.Count / (float)bottomPanelTileCount);
+            Debug.Log("totalNoPages" + totalNoPages);
             if (totalNoPages <= 1)
             {
                 previousPage.gameObject.SetActive(false);
