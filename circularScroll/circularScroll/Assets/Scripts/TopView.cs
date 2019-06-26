@@ -2,13 +2,57 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using UniRx;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TopView : MonoBehaviour {
     const string sampleJson = "sample.json";
-	
-	void Start () {
-        Debug.Log("start");
+    private List<SmallTile> smallTiles = new List<SmallTile>();
+    [SerializeField] private GameObject smallThumbnailRow;
+    [SerializeField] private GameObject contentSetParent;
+    [SerializeField] private Button previousPage;
+    [SerializeField] private Button nextPage;
+    [SerializeField] private RectTransform detailListItemsParent;
+    [Header("Collection view carousel animation properties")]
+    [SerializeField] private float smallListCarouselSlideDuration = 0.5f;
+    [SerializeField] private float smallListCarouselFadeDuration = 0.5f;
+    [SerializeField] private float smallListCarouselDelayDuration = 0.25f;
+    [SerializeField] private float smallListCarouselSlideDistance = 750f;
+    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly CompositeDisposable signalsDisposables = new CompositeDisposable();
+
+    private ReactiveProperty<int> selectedPage = new ReactiveProperty<int>(0);
+    private CarouselButtons currentClickedCarouselButton = CarouselButtons.None;
+
+    private Values placeholderContent = new Values { placeholderTile = true };
+    private CanvasGroup parentCanvasGroup;
+
+    public List<Values> cachedFilteredList = new List<Values>();
+    private List<SmallTile> displayContentList = new List<SmallTile>();
+    private const int bottomPanelTileCount = 3;
+    private bool IsDetailListCarouselAnimating = false;
+    private int totalNoPages;
+    private float contentSetParentPositionx;
+    private enum CarouselButtons
+    {
+        None,
+        Previous,
+        Next
+    }
+    //Content-->Values
+    //ContentTile-->SmallTile
+
+    private void Awake()
+    {
+        smallTiles = smallThumbnailRow.GetComponentsInChildren<SmallTile>(true).ToList();
+        parentCanvasGroup = detailListItemsParent.GetComponent<CanvasGroup>();
+        displayContentList = contentSetParent.GetComponentsInChildren<SmallTile>(true).ToList();
+        totalNoPages = 0;
+        contentSetParentPositionx = detailListItemsParent.transform.localPosition.x;
+    }
+    void Start () {
         string fileName = Path.Combine(Application.dataPath, sampleJson);
         LoadJson(fileName);
     }
@@ -23,10 +67,149 @@ public class TopView : MonoBehaviour {
             for(int i=0;i<items.Values.Length;i++)
             {
                 Debug.Log(items.Values[i].Text);
-            }           
+            }
+            totalNoPages = Mathf.CeilToInt(cachedFilteredList.Count / (float)bottomPanelTileCount);
+            if (totalNoPages <= 1)
+            {
+                previousPage.gameObject.SetActive(false);
+                nextPage.gameObject.SetActive(false);
+            }
+            int setPage = (selectedPage.Value > GetLastPage()) ? GetLastPage() : selectedPage.Value;
+            setPage = (setPage < 0) ? 0 : setPage;
+            selectedPage.SetValueAndForceNotify(setPage);
+        }
+    }
+    private int GetLastPage()
+    {
+        return Mathf.CeilToInt((cachedFilteredList.Count() / (float)bottomPanelTileCount) - 1);
+    }
+    private void AnimateSpotlightCarousel(int pageNo, int positiveDirectionMultiplier, int negativeDirectionMultiplier)
+    {
+        if (totalNoPages > 1)
+        {
+            IsDetailListCarouselAnimating = true;
+            /*
+            parentCanvasGroup.DOFade(0.0f, detailListCarouselFadeDuration);
+            detailListItemsParent.DOLocalMoveX(smallListCarouselSlideDistance * positiveDirectionMultiplier, smallListCarouselSlideDuration, true).OnComplete(() =>
+            {
+                ChangePageContents(pageNo);
+                Sequence sequence = DOTween.Sequence();
+                sequence.Append(detailListItemsParent.DOLocalMoveX(detailListCarouselSlideDistance * negativeDirectionMultiplier, 0f, true))
+                    .AppendInterval(detailListCarouselDelayDuration)
+                    .Append(detailListItemsParent.DOLocalMoveX(contentSetParentPositionx, detailListCarouselSlideDuration, true))
+                    .Join(parentCanvasGroup.DOFade(1.0f, detailListCarouselFadeDuration))
+                    .OnComplete(() =>
+                    {
+                        IsDetailListCarouselAnimating = false;
+                    });
+
+                sequence.Play();
+            });
+            */
+        }
+        else
+        {
+            ChangePageContents(pageNo);
         }
     }
 
+    private void ChangePageContents(int pageNo)
+    {
+        int listMax = (cachedFilteredList.Count - pageNo * bottomPanelTileCount) < bottomPanelTileCount ? cachedFilteredList.Count - pageNo * bottomPanelTileCount : bottomPanelTileCount;
+
+        List<Values> spotlightList = new List<Values>();
+        if (listMax > 0)
+        {
+            spotlightList = cachedFilteredList.ToList().GetRange(pageNo * bottomPanelTileCount, listMax);
+        }
+
+        for (int i = 0; i < displayContentList.Count; i++)
+        {
+            displayContentList[i].SetActiveSafely(false);
+            displayContentList[i].CleanItem();
+            if (i < spotlightList.Count)
+            {
+                displayContentList[i].ConfigureFor(spotlightList[i].Text,true);//need tocheck
+            }
+            else
+            {
+                displayContentList[i].ConfigureFor();//need to check
+            }
+            displayContentList[i].transform.SetAsLastSibling();
+            displayContentList[i].SetActiveSafely(true);
+        }
+    }
+
+    void OnDisable()
+    {
+        nextPage.onClick.RemoveAllListeners();
+        previousPage.onClick.RemoveAllListeners();
+        disposables.Clear();
+
+    }
+
+    void OnEnable()
+    {
+        disposables.Clear();
+        signalsDisposables.Clear();
+        currentClickedCarouselButton = CarouselButtons.None;
+
+        selectedPage.Skip(1)
+            .TakeUntilDisable(this)
+            .Where(page => page >= 0)
+            .Subscribe(currentPage =>
+            {
+                if (currentClickedCarouselButton == CarouselButtons.Next)
+                {
+                    AnimateSpotlightCarousel(currentPage, -1, 1);
+                }
+                else if (currentClickedCarouselButton == CarouselButtons.Previous)
+                {
+                    AnimateSpotlightCarousel(currentPage, 1, -1);
+                }
+                else
+                {
+                    ChangePageContents(currentPage);
+                }
+            })
+            .AddTo(disposables);
+
+
+        previousPage.onClick.AsObservable()
+            .TakeUntilDisable(this)
+            .Where(_ => !IsDetailListCarouselAnimating)
+            .Subscribe(_ => {
+                currentClickedCarouselButton = CarouselButtons.Previous;
+
+                if (selectedPage.Value == 0)
+                {
+
+                    selectedPage.Value = GetLastPage();
+                }
+                else
+                {
+                    selectedPage.Value--;
+                }
+            })
+            .AddTo(disposables);
+
+        nextPage.onClick.AsObservable()
+            .TakeUntilDisable(this)
+            .Where(_ => !IsDetailListCarouselAnimating)
+            .Subscribe(_ => {
+                currentClickedCarouselButton = CarouselButtons.Next;
+                if (selectedPage.Value == GetLastPage())
+                {
+
+                    selectedPage.Value = 0;
+                }
+                else
+                {
+                    selectedPage.Value++;
+                }
+            })
+            .AddTo(disposables);
+    }
 }
 [Serializable]
 public class ListItem { 
@@ -36,4 +219,5 @@ public class ListItem {
 public class Values
 {
     public string Text;
+    public bool placeholderTile;
 }
