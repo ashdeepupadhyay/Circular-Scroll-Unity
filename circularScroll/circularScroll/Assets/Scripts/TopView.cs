@@ -6,6 +6,7 @@ using System.Linq;
 using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class TopView : MonoBehaviour {
     const string sampleJson = "sample.json";
@@ -41,9 +42,6 @@ public class TopView : MonoBehaviour {
         Previous,
         Next
     }
-    //Content-->Values
-    //ContentTile-->SmallTile
-
     private void Awake()
     {
         smallTiles = smallThumbnailRow.GetComponentsInChildren<SmallTile>(true).ToList();
@@ -88,16 +86,16 @@ public class TopView : MonoBehaviour {
         if (totalNoPages > 1)
         {
             IsDetailListCarouselAnimating = true;
-            /*
-            parentCanvasGroup.DOFade(0.0f, detailListCarouselFadeDuration);
+            
+            parentCanvasGroup.DOFade(0.0f, smallListCarouselFadeDuration);
             detailListItemsParent.DOLocalMoveX(smallListCarouselSlideDistance * positiveDirectionMultiplier, smallListCarouselSlideDuration, true).OnComplete(() =>
             {
                 ChangePageContents(pageNo);
                 Sequence sequence = DOTween.Sequence();
-                sequence.Append(detailListItemsParent.DOLocalMoveX(detailListCarouselSlideDistance * negativeDirectionMultiplier, 0f, true))
-                    .AppendInterval(detailListCarouselDelayDuration)
-                    .Append(detailListItemsParent.DOLocalMoveX(contentSetParentPositionx, detailListCarouselSlideDuration, true))
-                    .Join(parentCanvasGroup.DOFade(1.0f, detailListCarouselFadeDuration))
+                sequence.Append(detailListItemsParent.DOLocalMoveX(smallListCarouselSlideDistance * negativeDirectionMultiplier, 0f, true))
+                    .AppendInterval(smallListCarouselDelayDuration)
+                    .Append(detailListItemsParent.DOLocalMoveX(contentSetParentPositionx, smallListCarouselSlideDuration, true))
+                    .Join(parentCanvasGroup.DOFade(1.0f, smallListCarouselFadeDuration))
                     .OnComplete(() =>
                     {
                         IsDetailListCarouselAnimating = false;
@@ -105,7 +103,7 @@ public class TopView : MonoBehaviour {
 
                 sequence.Play();
             });
-            */
+            
         }
         else
         {
