@@ -56,16 +56,13 @@ public class TopView : MonoBehaviour {
         using (StreamReader r = new StreamReader(fileName))
         {
             string json = r.ReadToEnd();
-            Debug.Log("json" + json);
             ListItem items = JsonUtility.FromJson<ListItem>(json);
-            Debug.Log("***" + items.Values.Length);
             for(int i=0;i<items.Values.Length;i++)
             {
                 Debug.Log(items.Values[i].Text);
             }
             cachedFilteredList = items.Values.ToList();
             totalNoPages = Mathf.CeilToInt(cachedFilteredList.Count / (float)bottomPanelTileCount);
-            Debug.Log("totalNoPages" + totalNoPages);
             if (totalNoPages <= 1)
             {
                 previousPage.gameObject.SetActive(false);
@@ -78,7 +75,6 @@ public class TopView : MonoBehaviour {
     }
     private int GetLastPage()
     {
-        Debug.Log("lastPage"+ Mathf.CeilToInt((cachedFilteredList.Count() / (float)bottomPanelTileCount) - 1));
         return Mathf.CeilToInt((cachedFilteredList.Count() / (float)bottomPanelTileCount) - 1);
     }
     private void AnimateCarousel(int pageNo, int positiveDirectionMultiplier, int negativeDirectionMultiplier)
@@ -118,7 +114,6 @@ public class TopView : MonoBehaviour {
         List<Values> tempList = new List<Values>();
         if (listMax > 0)
         {
-            Debug.Log(pageNo * bottomPanelTileCount + "****" + listMax);
             tempList = cachedFilteredList.ToList().GetRange(pageNo * bottomPanelTileCount, listMax);
         }
 
