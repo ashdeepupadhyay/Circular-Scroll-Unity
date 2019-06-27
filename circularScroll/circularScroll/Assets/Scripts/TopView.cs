@@ -10,13 +10,11 @@ using DG.Tweening;
 
 public class TopView : MonoBehaviour {
     const string sampleJson = "sample.json";
-    private List<SmallTile> smallTiles = new List<SmallTile>();
-    [SerializeField] private GameObject smallThumbnailRow;
     [SerializeField] private GameObject contentSetParent;
     [SerializeField] private Button previousPage;
     [SerializeField] private Button nextPage;
     [SerializeField] private RectTransform detailListItemsParent;
-    [Header("Collection view carousel animation properties")]
+    [Header("carousel view animation properties")]
     [SerializeField] private float smallListCarouselSlideDuration = 0.5f;
     [SerializeField] private float smallListCarouselFadeDuration = 0.5f;
     [SerializeField] private float smallListCarouselDelayDuration = 0.25f;
@@ -44,7 +42,6 @@ public class TopView : MonoBehaviour {
     }
     private void Awake()
     {
-        smallTiles = smallThumbnailRow.GetComponentsInChildren<SmallTile>(true).ToList();
         parentCanvasGroup = detailListItemsParent.GetComponent<CanvasGroup>();
         displayContentList = contentSetParent.GetComponentsInChildren<SmallTile>(true).ToList();
         totalNoPages = 0;
@@ -81,9 +78,10 @@ public class TopView : MonoBehaviour {
     }
     private int GetLastPage()
     {
+        Debug.Log("lastPage"+ Mathf.CeilToInt((cachedFilteredList.Count() / (float)bottomPanelTileCount) - 1));
         return Mathf.CeilToInt((cachedFilteredList.Count() / (float)bottomPanelTileCount) - 1);
     }
-    private void AnimateSpotlightCarousel(int pageNo, int positiveDirectionMultiplier, int negativeDirectionMultiplier)
+    private void AnimateCarousel(int pageNo, int positiveDirectionMultiplier, int negativeDirectionMultiplier)
     {
         if (totalNoPages > 1)
         {
@@ -116,24 +114,25 @@ public class TopView : MonoBehaviour {
     private void ChangePageContents(int pageNo)
     {
         int listMax = (cachedFilteredList.Count - pageNo * bottomPanelTileCount) < bottomPanelTileCount ? cachedFilteredList.Count - pageNo * bottomPanelTileCount : bottomPanelTileCount;
-
-        List<Values> spotlightList = new List<Values>();
+        Debug.Log(listMax);
+        List<Values> tempList = new List<Values>();
         if (listMax > 0)
         {
-            spotlightList = cachedFilteredList.ToList().GetRange(pageNo * bottomPanelTileCount, listMax);
+            Debug.Log(pageNo * bottomPanelTileCount + "****" + listMax);
+            tempList = cachedFilteredList.ToList().GetRange(pageNo * bottomPanelTileCount, listMax);
         }
 
         for (int i = 0; i < displayContentList.Count; i++)
         {
             displayContentList[i].SetActiveSafely(false);
             displayContentList[i].CleanItem();
-            if (i < spotlightList.Count)
+            if (i < tempList.Count)
             {
-                displayContentList[i].ConfigureFor(spotlightList[i].Text,true);//need tocheck
+                displayContentList[i].ConfigureFor(tempList[i].Text,true);
             }
             else
             {
-                displayContentList[i].ConfigureFor();//need to check
+                displayContentList[i].ConfigureFor();
             }
             displayContentList[i].transform.SetAsLastSibling();
             displayContentList[i].SetActiveSafely(true);
@@ -161,11 +160,11 @@ public class TopView : MonoBehaviour {
             {
                 if (currentClickedCarouselButton == CarouselButtons.Next)
                 {
-                    AnimateSpotlightCarousel(currentPage, -1, 1);
+                    AnimateCarousel(currentPage, -1, 1);
                 }
                 else if (currentClickedCarouselButton == CarouselButtons.Previous)
                 {
-                    AnimateSpotlightCarousel(currentPage, 1, -1);
+                    AnimateCarousel(currentPage, 1, -1);
                 }
                 else
                 {
